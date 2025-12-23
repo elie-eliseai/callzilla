@@ -1,0 +1,229 @@
+{
+  "description": "Complex Test Call Tree - 3 Layers",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {"event": "incomingMessage"},
+        {"event": "incomingCall", "next": "main_menu"},
+        {"event": "incomingConversationMessage"},
+        {"event": "incomingRequest"}
+      ],
+      "properties": {
+        "offset": {"x": 0, "y": 0}
+      }
+    },
+    {
+      "name": "main_menu",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {"event": "keypress", "next": "main_router"},
+        {"event": "speech", "next": "main_router"},
+        {"event": "timeout", "next": "main_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": 0, "y": 200},
+        "say": "Thank you for calling Sunset Ridge Apartments. Press 1 or say leasing for leasing. Press 2 for current residents. Press 3 for maintenance. Press 0 for an operator.",
+        "timeout": 8,
+        "number_of_digits": 1,
+        "hints": "leasing, residents, maintenance",
+        "gather_language": "en-US",
+        "speech_timeout": "auto"
+      }
+    },
+    {
+      "name": "main_router",
+      "type": "split-based-on",
+      "transitions": [
+        {"event": "noMatch", "next": "main_menu"},
+        {"event": "match", "next": "leasing_menu", "conditions": [{"friendly_name": "1", "arguments": ["{{widgets.main_menu.Digits}}"], "type": "equal_to", "value": "1"}]},
+        {"event": "match", "next": "residents_menu", "conditions": [{"friendly_name": "2", "arguments": ["{{widgets.main_menu.Digits}}"], "type": "equal_to", "value": "2"}]},
+        {"event": "match", "next": "maintenance_vm", "conditions": [{"friendly_name": "3", "arguments": ["{{widgets.main_menu.Digits}}"], "type": "equal_to", "value": "3"}]},
+        {"event": "match", "next": "operator_hold", "conditions": [{"friendly_name": "0", "arguments": ["{{widgets.main_menu.Digits}}"], "type": "equal_to", "value": "0"}]}
+      ],
+      "properties": {
+        "input": "{{widgets.main_menu.Digits}}",
+        "offset": {"x": 0, "y": 400}
+      }
+    },
+    {
+      "name": "leasing_menu",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {"event": "keypress", "next": "leasing_router"},
+        {"event": "speech", "next": "leasing_router"},
+        {"event": "timeout", "next": "leasing_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": -300, "y": 600},
+        "say": "Leasing department. Press 1 for rental rates. Press 2 for application status. Press 3 to schedule a tour. Press 4 to speak with a leasing agent now.",
+        "timeout": 8,
+        "number_of_digits": 1
+      }
+    },
+    {
+      "name": "leasing_router",
+      "type": "split-based-on",
+      "transitions": [
+        {"event": "noMatch", "next": "leasing_menu"},
+        {"event": "match", "next": "rates_info", "conditions": [{"friendly_name": "1", "arguments": ["{{widgets.leasing_menu.Digits}}"], "type": "equal_to", "value": "1"}]},
+        {"event": "match", "next": "app_menu", "conditions": [{"friendly_name": "2", "arguments": ["{{widgets.leasing_menu.Digits}}"], "type": "equal_to", "value": "2"}]},
+        {"event": "match", "next": "tour_menu", "conditions": [{"friendly_name": "3", "arguments": ["{{widgets.leasing_menu.Digits}}"], "type": "equal_to", "value": "3"}]},
+        {"event": "match", "next": "human_transfer", "conditions": [{"friendly_name": "4", "arguments": ["{{widgets.leasing_menu.Digits}}"], "type": "equal_to", "value": "4"}]}
+      ],
+      "properties": {
+        "input": "{{widgets.leasing_menu.Digits}}",
+        "offset": {"x": -300, "y": 800}
+      }
+    },
+    {
+      "name": "residents_menu",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {"event": "keypress", "next": "residents_router"},
+        {"event": "timeout", "next": "residents_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": 0, "y": 600},
+        "say": "Current residents. Press 1 for rent payment. Press 2 for lease renewal. Press 3 for maintenance requests.",
+        "timeout": 8,
+        "number_of_digits": 1
+      }
+    },
+    {
+      "name": "residents_router",
+      "type": "split-based-on",
+      "transitions": [
+        {"event": "noMatch", "next": "residents_menu"},
+        {"event": "match", "next": "ai_assistant", "conditions": [{"friendly_name": "2", "arguments": ["{{widgets.residents_menu.Digits}}"], "type": "equal_to", "value": "2"}]}
+      ],
+      "properties": {
+        "input": "{{widgets.residents_menu.Digits}}",
+        "offset": {"x": 0, "y": 800}
+      }
+    },
+    {
+      "name": "app_menu",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {"event": "keypress", "next": "app_router"},
+        {"event": "timeout", "next": "app_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": -500, "y": 1000},
+        "say": "Application status. Press 1 for online status check. Press 2 to speak with the processing team.",
+        "timeout": 8,
+        "number_of_digits": 1
+      }
+    },
+    {
+      "name": "app_router",
+      "type": "split-based-on",
+      "transitions": [
+        {"event": "noMatch", "next": "app_menu"},
+        {"event": "match", "next": "human_transfer", "conditions": [{"friendly_name": "2", "arguments": ["{{widgets.app_menu.Digits}}"], "type": "equal_to", "value": "2"}]}
+      ],
+      "properties": {
+        "input": "{{widgets.app_menu.Digits}}",
+        "offset": {"x": -500, "y": 1200}
+      }
+    },
+    {
+      "name": "tour_menu",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {"event": "keypress", "next": "tour_router"},
+        {"event": "timeout", "next": "tour_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": -200, "y": 1000},
+        "say": "Tour scheduling. Press 1 for self-guided tour info. Press 2 to schedule with an agent.",
+        "timeout": 8,
+        "number_of_digits": 1
+      }
+    },
+    {
+      "name": "tour_router",
+      "type": "split-based-on",
+      "transitions": [
+        {"event": "noMatch", "next": "tour_menu"},
+        {"event": "match", "next": "human_transfer", "conditions": [{"friendly_name": "2", "arguments": ["{{widgets.tour_menu.Digits}}"], "type": "equal_to", "value": "2"}]}
+      ],
+      "properties": {
+        "input": "{{widgets.tour_menu.Digits}}",
+        "offset": {"x": -200, "y": 1200}
+      }
+    },
+    {
+      "name": "rates_info",
+      "type": "say-play",
+      "transitions": [
+        {"event": "audioComplete", "next": "leasing_menu"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": -600, "y": 1000},
+        "say": "Our rental rates: Studios from $1,200. One bedrooms $1,450 to $1,650. Two bedrooms from $1,850. Three bedrooms from $2,400. Rates vary by move-in date."
+      }
+    },
+    {
+      "name": "maintenance_vm",
+      "type": "say-play",
+      "transitions": [
+        {"event": "audioComplete"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": 300, "y": 600},
+        "say": "Maintenance department. Leave your name, unit number, and issue after the tone. We'll respond within 24 hours. Beep!"
+      }
+    },
+    {
+      "name": "operator_hold",
+      "type": "say-play",
+      "transitions": [
+        {"event": "audioComplete", "next": "human_transfer"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": 300, "y": 400},
+        "say": "Please hold for the next available representative."
+      }
+    },
+    {
+      "name": "ai_assistant",
+      "type": "say-play",
+      "transitions": [
+        {"event": "audioComplete", "next": "human_transfer"}
+      ],
+      "properties": {
+        "voice": "Polly.Joanna",
+        "offset": {"x": 100, "y": 1000},
+        "say": "Hi! I'm Mia, your Virtual Leasing Assistant powered by EliseAI. I can help with pricing, availability, and tours. How can I help you today? I didn't catch that. Let me connect you with someone."
+      }
+    },
+    {
+      "name": "human_transfer",
+      "type": "connect-call-to",
+      "transitions": [
+        {"event": "callCompleted"}
+      ],
+      "properties": {
+        "offset": {"x": -300, "y": 1400},
+        "to": "+12022158237",
+        "timeout": 30
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
+

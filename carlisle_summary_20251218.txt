@@ -1,0 +1,79 @@
+CARLISLE PROPERTIES - ELISEAI DETECTION RESULTS
+================================================
+Date: December 18, 2024
+Time: 11:02 AM - 12:01 PM EST
+Log File: call_log_20251218_110246.txt
+
+SUMMARY
+-------
+Total Properties: 6
+Total Phone Numbers Tested: 18 (3 per property)
+EliseAI Detected: 0
+Human Staff Answered: 4 instances
+
+RESULT: NONE of the Carlisle properties are using EliseAI
+
+DETAILED RESULTS BY PROPERTY
+----------------------------
+
+1. GARLAND RODES (Lynchburg, VA)
+   - Google (434) 856-0856: VOICEMAIL - Shared line, press 1 for leasing
+   - Apartments (434) 473-6181: VOICEMAIL - Press 1 for leasing  
+   - Website (434) 856-0856: HUMAN (Mika) - Answered 3x, couldn't reach VM
+   Status: NO ELISEAI
+
+2. PIEDMONT FLOUR LOFTS (Lynchburg, VA)
+   - Google (434) 856-0856: VOICEMAIL - Shared line with Garland/Gables
+   - Apartments (434) 448-3641: VOICEMAIL - Press 1, then 1 again
+   - Website (434) 856-0856: VOICEMAIL - Press 1 for leasing
+   Status: NO ELISEAI
+
+3. GABLES AT CORNERSTONE (Lynchburg, VA)
+   - Google (434) 771-0108: NO ANSWER - Number may be out of service
+   - Apartments (434) 300-3532: VOICEMAIL - Press 1 for leasing
+   - Website (434) 755-3831: VOICEMAIL - Human (Mika) first, then VM
+   Status: NO ELISEAI
+
+4. COASTAL WIND TOWNES (Myrtle Beach, SC)
+   - Google (843) 287-9841: BUSY - Line was busy
+   - Apartments (854) 854-4607: VOICEMAIL - Press 1, then 1 again
+   - Website (843) 380-2208: VOICEMAIL - Press 1 for leasing
+   Status: NO ELISEAI
+
+5. BELL'S LAKE TOWNES (Longs, SC)
+   - Google (866) 730-8775: HUMAN - "We'll text you shortly" (text-based system)
+   - Apartments (843) 890-2506: VOICEMAIL - Press 1, then 1 again
+   - Website (843) 790-9383: VOICEMAIL - Press 1 for leasing
+   Status: NO ELISEAI
+
+6. ROSEMARY GLEN (Whitsett, NC)
+   - Google (336) 290-7436: HUMAN (Jeanette/Keisha) - Very responsive staff
+   - Apartments (336) 290-7436: SKIPPED - Same as Google
+   - Website (336) 290-7436: SKIPPED - Same as Google
+   Status: NO ELISEAI
+
+KEY OBSERVATIONS
+----------------
+1. All properties use standard call trees (press 1 for leasing)
+2. Three properties have SHARED phone lines:
+   - Garland Rodes, Piedmont Flour Lofts, Gables at Cornerstone (Lynchburg)
+3. Human staff very responsive at:
+   - Rosemary Glen (Jeanette, Keisha)
+   - Garland Rodes/Gables (Mika)
+4. Bell's Lake uses text-based leasing system (modern but not AI)
+5. No EliseAI disclaimer detected on any call
+
+PHONE SYSTEM NOTES
+------------------
+- Common voicemail message: "One of our leasing professionals will be happy 
+  to provide you with information..."
+- All use quality assurance recording disclaimers
+- Some require navigating multi-layer call trees (press 1, then 1 again)
+
+FILES GENERATED
+---------------
+- carlisle_scraped.csv: Phone numbers scraped
+- carlisle_call_results_20251218.csv: Detailed call results
+- carlisle_summary_20251218.txt: This summary
+- call_log_20251218_110246.txt: Full call log with transcriptions
+

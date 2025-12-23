@@ -1,0 +1,71 @@
+APARTMENTS.COM SCRAPING - CAPTCHA ISSUE & FIX
+=============================================
+Date: Dec 17, 2024
+
+ISSUE
+-----
+- Bright Data Web Unlocker (residential proxies) sometimes returns CAPTCHA pages
+- Example: Gables at Cornerstone returned 381KB but contained captcha challenge
+- Status shows "pending" when captcha detected (we get HTML but can't extract phone)
+
+DIAGNOSIS
+---------
+- Bright Data IS working for most listings (Garland Rodes: 339KB → phone extracted)
+- Some specific listings trigger captcha even with residential IPs
+- Could be: rate limiting, specific listing protection, or bot fingerprinting
+
+CURRENT DETECTION
+-----------------
+Added debug output in apartments.py:
+- Shows bytes received from Bright Data
+- Detects "captcha" or "challenge" in HTML
+- Shows tel: and phone counts when extraction fails
+
+FIX OPTIONS
+-----------
+1. BRIGHT DATA NATIVE (recommended)
+   - Enable captcha solving in zone settings (Bright Data dashboard)
+   - Or add to API payload: "captcha_solve": True
+   
+2. THIRD-PARTY CAPTCHA SOLVERS
+   - 2Captcha: ~$1-3 per 1,000 solves (most popular)
+   - CapSolver: ~$0.50 per 1,000
+   - AZcaptcha: $1 per 1,000 or $25/mo unlimited
+   
+3. RETRY LOGIC
+   - If captcha detected, wait 5-10 seconds and retry
+   - Sometimes works on second attempt
+
+CODE CHANGE NEEDED
+------------------
+In apartments.py, update bd_payload:
+
+bd_payload = {
+    "zone": bd_zone,
+    "url": apartments_url,
+    "format": "raw",
+    "captcha_solve": True  # Enable Bright Data captcha solving
+}
+
+FALLBACK IMPLEMENTATION (if needed)
+-----------------------------------
+If captcha_solve doesn't work, add retry with third-party solver:
+
+1. Detect captcha in response
+2. Extract captcha challenge details
+3. Send to 2Captcha/CapSolver API
+4. Get solution token
+5. Retry request with token
+
+COST ESTIMATE
+-------------
+At ~50-100 properties per batch:
+- Bright Data captcha solve: included in Web Unlocker pricing
+- Third-party: ~$0.05-0.30 per batch (negligible)
+
+NEXT STEPS
+----------
+1. Check Bright Data zone settings for captcha option
+2. Try adding captcha_solve: True to API payload
+3. If still failing, implement third-party fallback
+

@@ -1,0 +1,65 @@
+# Environment and secrets
+.env
+.env.local
+.env.*
+secret_key.txt
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and results (large/generated files)
+*.log
+call_log_*.txt
+
+# Data files (contain call SIDs, phone numbers, etc.)
+*_results*.csv
+*_scraped*.csv
+scraped_*.csv
+elise_*.csv
+carlisle_*.csv
+call_results*.csv
+properties.csv
+mynumber.csv
+test_scrape.csv
+
+# Keep test_dataset.csv template (manually add to git with -f if needed)
+
+# Recordings (large binary files)
+recordings/
+*.mp3
+*.wav
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test output
+accuracy_report*.json
+gpt_decisions_corpus.jsonl
+
