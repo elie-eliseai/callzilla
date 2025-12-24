@@ -1,0 +1,6 @@
+property_name,location,expected_phone,uses_elise,verified_by,date_verified
+# Add your verified properties below
+# uses_elise should be: yes, no, or unknown
+# Example:
+# Bell Lake Townes,"Moncks Corner, SC",+18438902506,yes,manual_call,2024-12-18
+

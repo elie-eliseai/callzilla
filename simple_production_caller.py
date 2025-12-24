@@ -18,9 +18,13 @@ Helper modules:
 import sys
 import os
 import time
+import logging
 import requests
 from datetime import datetime
 from twilio.rest import Client
+
+# Suppress verbose Twilio HTTP logging
+logging.getLogger('twilio.http_client').setLevel(logging.WARNING)
 
 # Local imports
 from config import Config
