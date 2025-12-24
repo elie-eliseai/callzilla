@@ -202,26 +202,25 @@ def reset_job():
 def speech_detected():
     """
     Webhook called by Twilio when speech is detected after button presses.
-    This means someone answered - play the TTS message and keep recording.
+    This means a human likely answered - play the TTS message now.
     """
     print(f"\n🗣️ WEBHOOK HIT: /voice/speech-detected")
-    print(f"   📞 Playing TTS message and continuing to record...")
+    print(f"   📞 Playing TTS message to human!")
     
     response = VoiceResponse()
     
-    # Play TTS message - human/AI will hear this!
+    # Play TTS message - human will hear this!
     response.say(
         Config.HUMAN_MESSAGE,
         voice='Polly.Joanna',
         language='en-US'
     )
     
-    # Keep recording the conversation (don't hang up!)
-    # timeout=30: stop after 30s of silence
-    # max_length=120: max 2 minutes of recording
-    response.record(timeout=30, max_length=120, play_beep=False)
+    # Keep listening: ends after 8s silence OR 120s total (whichever first)
+    # This captures full AI conversations without waiting forever
+    response.record(timeout=8, maxLength=120, playBeep=False)
     
-    print(f"   ✅ TTS + Record TwiML returned to Twilio")
+    print(f"   ✅ TTS TwiML returned to Twilio")
     return Response(str(response), mimetype='text/xml')
 
 
@@ -230,16 +229,12 @@ def no_speech():
     """
     Webhook called when no speech detected (timeout).
     Might be voicemail, AI, or another call tree.
-    Keep recording to capture whatever plays.
+    Just continue listening.
     """
-    print(f"\n🔇 WEBHOOK HIT: /voice/no-speech")
-    print(f"   📼 No speech detected, continuing to record...")
-    
     response = VoiceResponse()
     
-    # No speech detected - might be voicemail/AI greeting
-    # Keep recording to capture it
-    response.record(timeout=30, max_length=120, play_beep=False)
+    # No speech detected - keep listening: ends after 8s silence OR 120s total
+    response.record(timeout=8, maxLength=120, playBeep=False)
     
     return Response(str(response), mimetype='text/xml')
 

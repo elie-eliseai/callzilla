@@ -29,7 +29,7 @@ logging.getLogger('twilio.http_client').setLevel(logging.WARNING)
 # Local imports
 from config import Config
 from database import CallDatabase
-from audio_analyzer import AudioAnalyzer
+from audio_analyzer import AudioAnalyzer, find_phrase_timing
 from logging_utils import TeeLogger
 from csv_utils import (
     load_properties_from_csv, 
@@ -39,8 +39,7 @@ from csv_utils import (
 )
 from twiml_generator import (
     create_exploration_twiml,
-    create_button_sequence_twiml,
-    create_phone_tree_navigation_twiml
+    create_button_sequence_twiml
 )
 from gpt_analysis import (
     analyze_call_recording,
@@ -57,7 +56,7 @@ class SimpleProductionCaller:
     Main caller class - handles making calls and analyzing results.
     
     Flow:
-    1. Make exploration call to identify phone system type
+    1. Make call to identify phone system type
     2. If call tree: press buttons and call again
     3. If human: wait and retry to reach voicemail
     4. If machine (voicemail/AI): analyze for EliseAI disclaimer
@@ -203,9 +202,9 @@ class SimpleProductionCaller:
     # MAIN CALL METHODS
     # =========================================================================
     
-    def make_exploration_call(self, phone_number, property_name, button_sequence=None):
+    def make_call(self, phone_number, property_name, button_sequence=None):
         """
-        Make a call to explore the phone system.
+        Make a call to the phone system.
         If button_sequence is provided, press those buttons with timing.
         Otherwise, just listen and record.
         """
@@ -253,84 +252,6 @@ class SimpleProductionCaller:
                     retry_delay *= 2
                     continue
                 else:
-                    return None
-        
-        return None
-    
-    def make_call(self, phone_number, property_name):
-        """Make call with phone tree navigation (legacy method)"""
-        max_retries = 3
-        retry_delay = 5
-        
-        for attempt in range(max_retries):
-            try:
-                print(f"\n📞 Calling {property_name}: {phone_number}")
-                if attempt > 0:
-                    print(f"   🔄 Retry attempt {attempt + 1}/{max_retries}")
-                print(f"   🗣️  Will speak message if human picks up")
-                print(f"   🌳 Will navigate phone tree (press 1 for leasing)")
-                print(f"   📼 Will record full voicemail greeting")
-                
-                twiml = create_phone_tree_navigation_twiml()
-                
-                call = self.client.calls.create(
-                    to=phone_number,
-                    from_=Config.TWILIO_PHONE_NUMBER,
-                    twiml=twiml,
-                    record=True,
-                    recording_status_callback='',
-                    recording_channels='dual'
-                )
-                
-                print(f"   ✅ Call SID: {call.sid}")
-                
-                self.db.log_call(
-                    property_name=property_name,
-                    phone_number=phone_number,
-                    call_sid=call.sid,
-                    attempt_number=1,
-                    status='initiated',
-                    human_detected=False,
-                    ai_reached=False,
-                    disclaimer_found=False,
-                    immediate_message=False,
-                    immediate_disclaimer=False,
-                    classification='pending',
-                    gpt_reasoning='Call initiated, awaiting analysis'
-                )
-                
-                return call.sid
-                
-            except Exception as e:
-                error_msg = str(e)
-                print(f"   ❌ Error: {error_msg}")
-                
-                is_network_error = any(keyword in error_msg.lower() for keyword in [
-                    'connection', 'network', 'resolve', 'dns', 'timeout', 
-                    'max retries', 'nodename', 'servname'
-                ])
-                
-                if is_network_error and attempt < max_retries - 1:
-                    print(f"   ⏳ Network error detected, waiting {retry_delay}s before retry...")
-                    time.sleep(retry_delay)
-                    retry_delay *= 2
-                    continue
-                else:
-                    self.db.log_call(
-                        property_name=property_name,
-                        phone_number=phone_number,
-                        call_sid='',
-                        attempt_number=1,
-                        status='failed',
-                        human_detected=False,
-                        ai_reached=False,
-                        disclaimer_found=False,
-                        immediate_message=False,
-                        immediate_disclaimer=False,
-                        transcription=f"Error: {error_msg}",
-                        classification='failed',
-                        gpt_reasoning=f"Call failed: {error_msg}"
-                    )
                     return None
         
         return None
@@ -442,6 +363,7 @@ class SimpleProductionCaller:
         disclaimer_found = result['disclaimer_found']
         menu_duration = result.get('menu_duration', 10)
         immediate_info = result.get('immediate_message', {})
+        words = result.get('words', [])  # Word-level timestamps for phrase timing
         
         has_immediate_message = immediate_info.get('has_immediate_message', False)
         has_immediate_disclaimer = immediate_info.get('has_immediate_disclaimer', False)
@@ -500,7 +422,9 @@ class SimpleProductionCaller:
                 'disclaimer_found': disclaimer_found,
                 'transcription': transcription,
                 'menu_duration': menu_duration,
-                'suggested_button': suggested_button
+                'suggested_button': suggested_button,
+                'key_phrase': call_tree_analysis.get('key_phrase'),
+                'words': words
             }
         
         # STEP 7: Handle non-call-tree classifications
@@ -571,7 +495,7 @@ class SimpleProductionCaller:
         Process a single property with smart call tree navigation.
         
         Flow:
-        1. Make initial exploration call
+        1. Make initial call (listen to menu)
         2. Analyze result:
            - CALL_TREE: Determine button, add to sequence, call again
            - HUMAN: Wait, call again to reach voicemail
@@ -600,10 +524,10 @@ class SimpleProductionCaller:
                 print(f"\n   🔄 Attempt {attempt_number}: Navigating through call tree")
                 print(f"   🔢 Using button sequence: {[s['press'] for s in button_sequence]}")
                 print(f"   ⏱️  Timing: {[(s['wait'], s['press']) for s in button_sequence]}")
-                call_sid = self.make_exploration_call(phone_number, property_name, button_sequence)
+                call_sid = self.make_call(phone_number, property_name, button_sequence)
             else:
-                print(f"\n   🔍 Attempt {attempt_number}: Initial exploration call (no buttons)")
-                call_sid = self.make_exploration_call(phone_number, property_name, None)
+                print(f"\n   🔍 Attempt {attempt_number}: Listening to menu (no buttons)")
+                call_sid = self.make_call(phone_number, property_name, None)
             
             if not call_sid:
                 print(f"   ❌ Failed to make call, skipping property")
@@ -653,15 +577,30 @@ class SimpleProductionCaller:
                     print(f"   🔢 Defaulting to '1' for leasing")
                     suggested_button = '1'
                 
-                # Add button to sequence
-                menu_press_time = menu_duration + 1
-                cumulative_time = sum(step['wait'] for step in button_sequence) + menu_press_time
+                # Calculate precise timing using phrase-based approach
+                key_phrase = analysis.get('key_phrase')
+                words = analysis.get('words', [])
+                
+                # Calculate skip_seconds (where trimmed audio starts)
+                if button_sequence:
+                    skip_seconds = button_sequence[-1]['wait'] + 1
+                else:
+                    skip_seconds = 0
+                
+                # Use phrase-based timing
+                if key_phrase and words:
+                    phrase_end_time = find_phrase_timing(words, key_phrase)  # Will raise if not found
+                    cumulative_time = skip_seconds + phrase_end_time + 1  # +1 buffer
+                    print(f"   🎯 Phrase \"{key_phrase}\" ends at {phrase_end_time:.1f}s")
+                    print(f"   ⏱️  Will press at {cumulative_time:.1f}s from call start (skip {skip_seconds}s + phrase {phrase_end_time:.1f}s + 1s buffer)")
+                else:
+                    # Missing phrase data - this shouldn't happen with updated code
+                    raise ValueError(f"Missing phrase timing data: key_phrase={key_phrase}, words_count={len(words)}")
                 
                 button_sequence.append({
                     'wait': cumulative_time,
                     'press': suggested_button
                 })
-                print(f"   ⏱️  Will press at {cumulative_time}s from call start (menu ~{menu_duration}s + 1s buffer)")
                 
                 print(f"\n   🌳 Call tree layer {len(button_sequence)} detected")
                 print(f"   📱 Updated button sequence: {[s['press'] for s in button_sequence]}")

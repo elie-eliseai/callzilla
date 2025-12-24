@@ -1,0 +1,97 @@
+/Users/eliesalem/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+
+======================================================================
+📞 CALL MODE - Making calls only (no scraping)
+======================================================================
+📝 Log file: call_log_20251223_212144.txt
+======================================================================
+
+📋 CSV Analysis:
+   Total rows: 6
+   Name column: 'Property Name'
+   Phone column: 'Phone Number'
+   Address column: NOT FOUND
+✅ Loaded 6 properties to process
+
+🎯 Target disclaimer: 'This call and information may be recorded and used by a third party.'
+📊 Processing 6 properties...
+
+🚀 Starting calls automatically...
+
+
+[1/6]
+
+======================================================================
+🏢 American Can Google
+📞 +15042948797
+======================================================================
+
+   🔍 Attempt 1: Initial exploration call (no buttons)
+
+📞 Exploring American Can Google: +15042948797
+   🔍 Listening to identify phone system type...
+   ✅ Call SID: CAfb2e3ff091395b7387ed094cc4496274
+   ⏳ Waiting for call to complete.....................................................................
+   ✓ Call completed (141s)
+   📊 Call status: completed, duration: 141s
+   📼 Fetching recordings...
+   ✅ Recording: 135s (SID: RE1feb30ec8e7e73b0b05385675efa091b)
+   📝 Transcribing...
+   🔊 Stereo recording detected - extracting Channel 0 (their audio)
+   ✅ Extracted their audio (Channel 0)
+
+   📄 TRANSCRIPTION (Full length: 1853 chars):
+   ------------------------------------------------------------------
+   ⚠️  IMMEDIATE AUTOMATED MESSAGE DETECTED:
+   Behavior: immediate_automated_message
+   First 5 seconds: Thank you for calling the American Can Apartments. After the call, we'd like to follow up with you by....
+   ------------------------------------------------------------------
+   🔍 FIRST 200 CHARS: Thank you for calling the American Can Apartments. After the call, we'd like to follow up with you by text so that we can respond more quickly or help self-schedule a tour. If you agree to text, press...
+   ------------------------------------------------------------------
+   Thank you for calling the American Can Apartments
+   After the call, we'd like to follow up with you by text so that we can respond more quickly or help self-schedule a tour
+   If you agree to text, press one now
+   If you do not agree to text, press two
+   Thank you
+   This call and the information you provide may be recorded and used by the property and a third-party service provider for quality and product improvement purposes
+   This call and the information you provide may be recorded and used by the property and a third-party service provider for quality and product improvement purposes
+   This call and the information you provide may be recorded and used by the property and a third-party service provider Thank you for calling the American Can Apartments
+   If you are calling with a life-threatening emergency or fire, hang up now and dial 911
+   For leasing information, press 1
+   For routine maintenance service, or to leave a message for one of the office staff, where your call can be returned during regular business hours, press 2
+   If you are experiencing a maintenance emergency and need an on-call representative notified immediately, press 3
+   If you are experiencing a noise or other general disturbance and you need the services of a courtesy officer, press 4
+   I'm sorry I did not get your response
+   Please try again
+   For leasing information, press 1
+   For routine maintenance service, or to leave a message for one of the office staff, where your call can be returned during regular business hours, press 2
+   If you are experiencing a maintenance emergency and need an on-call representative notified immediately, press 3
+   If you are experiencing a noise or other general disturbance and you need the services of a courtesy officer, press 4
+   I'm sorry I still did not get your response
+   If you reached this in error, please hang up and try again.
+   ------------------------------------------------------------------
+
+   🤖 GPT Analysis:
+      Classification: 🌳 CALL_TREE
+      Button for leasing: '1'
+      Reasoning: The message provides explicit options for routing to different departments, indicating an automated call tree system.
+   🌳 CALL TREE DETECTED!
+   ⏱️  Menu duration: ~134 seconds
+   🔢 Suggested button for leasing: '1'
+   ⏱️  Will press at 135s from call start (menu ~134s + 1s buffer)
+
+   🌳 Call tree layer 1 detected
+   📱 Updated button sequence: ['1']
+   ⏳ Waiting 5 seconds before next call...
+
+   🔄 Attempt 2: Navigating through call tree
+   🔢 Using button sequence: ['1']
+   ⏱️  Timing: [(135, '1')]
+
+📞 Calling American Can Google: +15042948797
+   🔢 Button sequence: ['1']
+   📱 TwiML: Button '1' target=135s, elapsed=1s, wait=134s
+   🎤 Using speech detection webhook: https://nailless-multilobed-jeannie.ngrok-free.dev
+   ✅ Call SID: CA436a7678718d901611207b867f2c19dc
+   ⏳ Waiting for call to complete...................

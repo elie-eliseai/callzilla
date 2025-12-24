@@ -120,7 +120,9 @@ An automated routing menu with explicit button or voice options.
 
 **Not a call tree:** Generic greetings without options, hold music, informational messages, voicemail menus.
 
-If CALL_TREE: identify which button lets us SPEAK with leasing (we want a voice conversation). Look for: leasing, new residents, prospective residents, rental info, sales. If none of those exist, use "speak to an agent" or "representative" as fallback.
+If CALL_TREE: identify which button lets us speak with leasing (we want a voice conversation). Look for: leasing, new residents, prospective residents, rental info, sales. If none of those exist, use "speak to an agent" or "representative" as fallback.
+
+**IMPORTANT for CALL_TREE:** You must also return the EXACT phrase from the transcript that contains the button option. Copy-paste verbatim - do not paraphrase or reorder words. Include the full phrase like "For leasing inquiries, press 1" not just "press 1".
 
 ---
 
@@ -176,9 +178,10 @@ Ask yourself:
 
 ---
 
-## RESPONSE FORMAT (exactly 3 lines):
+## RESPONSE FORMAT (exactly 4 lines):
 CLASSIFICATION: call_tree OR human OR voicemail OR ai_assistant OR out_of_service
 BUTTON: [digit 0-9 if call_tree, otherwise "none"]
+KEY_PHRASE: [exact verbatim quote from transcript containing button option, or "none" if not call_tree]
 REASONING: [One sentence explaining your classification]
 """
         
@@ -188,7 +191,7 @@ REASONING: [One sentence explaining your classification]
                 {"role": "system", "content": "You classify phone call recordings. Focus on whether someone is PRESENT and REACTIVE (human) vs a pre-recorded message that just plays and ends (voicemail). Be precise."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=100,
+            max_tokens=150,
             temperature=0.1
         )
         
@@ -198,6 +201,7 @@ REASONING: [One sentence explaining your classification]
         lines = result.split('\n')
         classification = 'unknown'
         button = None
+        key_phrase = None
         reasoning = ""
         
         for line in lines:
@@ -213,6 +217,12 @@ REASONING: [One sentence explaining your classification]
                         if char.isdigit():
                             button = char
                             break
+            elif line_lower.startswith('key_phrase:'):
+                phrase_part = line.split(':', 1)[1].strip()
+                # Strip surrounding quotes if present
+                phrase_part = phrase_part.strip('"\'')
+                if phrase_part.lower() != 'none':
+                    key_phrase = phrase_part
             elif line_lower.startswith('reasoning:'):
                 reasoning = line.split(':', 1)[1].strip()
         
@@ -230,6 +240,8 @@ REASONING: [One sentence explaining your classification]
         print(f"      Classification: {emoji} {classification.upper()}")
         if classification == 'call_tree' and button:
             print(f"      Button for leasing: '{button}'")
+            if key_phrase:
+                print(f"      Key phrase: \"{key_phrase}\"")
         print(f"      Reasoning: {reasoning}")
         
         return {
@@ -240,6 +252,7 @@ REASONING: [One sentence explaining your classification]
             'is_ai_assistant': classification == 'ai_assistant',
             'is_out_of_service': classification == 'out_of_service',
             'button': button,
+            'key_phrase': key_phrase,
             'reasoning': reasoning
         }
         

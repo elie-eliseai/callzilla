@@ -1,9 +1,93 @@
 import io
+import re
 import wave
 import struct
 import requests
 from openai import OpenAI
 from config import Config
+
+
+def normalize_for_matching(text):
+    """
+    Normalize text for phrase matching.
+    Handles: case, number words, punctuation, whitespace.
+    """
+    text = text.lower()
+    
+    # Number words to digits
+    number_words = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+    }
+    for word, digit in number_words.items():
+        text = re.sub(rf'\b{word}\b', digit, text)
+    
+    # Remove punctuation
+    text = re.sub(r'[,.\-!?\'"]', '', text)
+    
+    # Normalize whitespace
+    return ' '.join(text.split())
+
+
+def find_phrase_timing(words, key_phrase):
+    """
+    Find exact timing for a phrase in word-level timestamps.
+    Returns end time of the phrase (when to press button).
+    
+    Args:
+        words: List of dicts with 'word', 'start', 'end' from Whisper
+        key_phrase: Exact phrase to find (e.g., "For leasing, press 1")
+    
+    Returns:
+        End time (float) of the last word in the phrase
+        
+    Raises:
+        ValueError if phrase not found (no fallbacks - fix root cause)
+    """
+    if not words:
+        raise ValueError("No word timestamps provided")
+    
+    if not key_phrase:
+        raise ValueError("No key phrase provided")
+    
+    # Normalize the phrase and split into words
+    normalized_phrase = normalize_for_matching(key_phrase)
+    phrase_words = normalized_phrase.split()
+    
+    if not phrase_words:
+        raise ValueError(f"Key phrase '{key_phrase}' normalized to empty")
+    
+    # Normalize all words from transcript
+    normalized_word_list = [normalize_for_matching(w['word']) for w in words]
+    
+    # Find ALL occurrences for debugging
+    all_matches = []
+    for i in range(len(words) - len(phrase_words) + 1):
+        window = normalized_word_list[i:i + len(phrase_words)]
+        if window == phrase_words:
+            last_word_idx = i + len(phrase_words) - 1
+            end_time = words[last_word_idx]['end']
+            all_matches.append((i, end_time))
+    
+    if all_matches:
+        # Debug: show all matches
+        print(f"   🔍 DEBUG: Found {len(all_matches)} occurrence(s) of phrase:")
+        for idx, (word_idx, end_time) in enumerate(all_matches):
+            print(f"      [{idx+1}] at word index {word_idx}, ends at {end_time:.1f}s")
+            # Show surrounding words for context
+            start_ctx = max(0, word_idx - 2)
+            end_ctx = min(len(words), word_idx + len(phrase_words) + 2)
+            context_words = [f"{words[j]['word']}({words[j]['end']:.1f}s)" for j in range(start_ctx, end_ctx)]
+            print(f"          Context: {' '.join(context_words)}")
+        
+        # Return FIRST match
+        return all_matches[0][1]
+    
+    # Not found - fail loudly
+    raise ValueError(f"Phrase '{key_phrase}' not found in transcript. "
+                     f"Normalized: '{normalized_phrase}'. "
+                     f"Available words: {normalized_word_list[:20]}...")
+
 
 class AudioAnalyzer:
     """Analyze call recordings for specific disclaimers"""
@@ -259,12 +343,14 @@ class AudioAnalyzer:
                 f.write(audio_data)
             
             # Transcribe using Whisper with verbose output for timestamps
+            # Include word-level timestamps for precise button timing
             with open(temp_file, 'rb') as audio_file:
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
                     response_format="verbose_json",
-                    language="en"
+                    language="en",
+                    timestamp_granularities=["word", "segment"]
                 )
             
             # Extract timing info from segments
@@ -287,10 +373,21 @@ class AudioAnalyzer:
             if hasattr(transcript, 'duration'):
                 total_duration = transcript.duration
             
+            # Extract word-level timestamps for precise button timing
+            words = []
+            if hasattr(transcript, 'words') and transcript.words:
+                for word in transcript.words:
+                    words.append({
+                        'word': word.get('word', '') if isinstance(word, dict) else getattr(word, 'word', ''),
+                        'start': word.get('start', 0) if isinstance(word, dict) else getattr(word, 'start', 0),
+                        'end': word.get('end', 0) if isinstance(word, dict) else getattr(word, 'end', 0)
+                    })
+            
             return {
                 'text': text,
                 'duration': total_duration,
-                'segments': segments
+                'segments': segments,
+                'words': words
             }
             
         except Exception as e:
@@ -299,27 +396,20 @@ class AudioAnalyzer:
     
     def get_menu_duration(self, transcription_result):
         """
-        Estimate how long the menu takes to play based on transcription.
-        Uses segment timestamps if available, otherwise estimates from text length.
+        Get total duration of the transcription.
+        Used for legacy timing fallback - phrase-based timing is preferred.
         """
         if not transcription_result:
-            return 10  # Default 10 seconds
+            raise ValueError("No transcription result - cannot determine duration")
         
         # If we have actual duration from Whisper
         if isinstance(transcription_result, dict) and 'duration' in transcription_result:
             duration = transcription_result['duration']
             if duration and duration > 0:
-                # Return actual duration (no buffer - buffer is added at button press time)
                 return int(duration)
         
-        # Fallback: estimate based on text length
-        # Average speaking rate is about 150 words per minute (2.5 words per second)
-        text = transcription_result.get('text', '') if isinstance(transcription_result, dict) else str(transcription_result)
-        word_count = len(text.split())
-        estimated_seconds = word_count / 2.5
-        
-        # Ensure minimum duration (no buffer - buffer is added at button press time)
-        return max(5, int(estimated_seconds))
+        # No duration available - fail loudly instead of guessing
+        raise ValueError("No duration in transcription result - check Whisper call")
     
     def check_for_disclaimer(self, transcription, target_disclaimer):
         """Check if the target disclaimer is present in the transcription"""
@@ -631,6 +721,7 @@ class AudioAnalyzer:
         
         transcription = transcription_result['text']
         menu_duration = self.get_menu_duration(transcription_result)
+        words = transcription_result.get('words', [])
         
         # Check for disclaimer in full transcription
         disclaimer_found = self.check_for_disclaimer(transcription, Config.TARGET_DISCLAIMER)
@@ -641,6 +732,7 @@ class AudioAnalyzer:
             'disclaimer_found': disclaimer_found,
             'immediate_message': immediate_info,
             'menu_duration': menu_duration,
+            'words': words,
             'error': None
         }
 
